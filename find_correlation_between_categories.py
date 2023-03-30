@@ -6,6 +6,9 @@ import random
 import numpy as np
 from scipy.stats import pearsonr
 import matplotlib.pyplot as plt
+import time
+import warnings
+
 
 RDF = Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
 RDFS = Namespace('http://www.w3.org/2000/01/rdf-schema#')
@@ -18,14 +21,10 @@ SERIES =  Namespace('https://example.org/series/')
 def get_correlation(kg, country, permutation):
     """
     This function will calculate the correlation of a permutation and one country.
+    It takes as input the knowledge graph, an country and two series we want to test a correlation on.
+
     """
-    """   PREFIX
-    foaf: < http: // xmlns.com / foaf / 0.1 / >
-    PREFIX
-    rdf: < http: // www.w3.org / 1999 / 02 / 22 - rdf - syntax - ns  # >
-    PREFIX
-    rdfs: < http: // www.w3.org / 2000 / 01 / rdf - schema  # >
-    """
+
 
     q = f"""
         SELECT ?year ?value
@@ -41,10 +40,13 @@ def get_correlation(kg, country, permutation):
     q_d = {}
     for r in kg.query(q, initBindings={'series': permutation[0], 'country': country}):
         q_d[r['year']] = r['value']
+        # print(f"{r['year']}: {r['value']}")
 
     data_pairs = []
     for r in kg.query(q, initBindings={'series': permutation[1], 'country': country}):
         perm_0 = q_d.get(r['year'], False)  #we must have two points for the same year
+        # print(f"{r['year']}: {r['value']}")
+
         if not perm_0:
             continue
         data_pairs.append([perm_0, r['value']])
@@ -55,7 +57,7 @@ def get_correlation(kg, country, permutation):
 
 
     correlation = pearsonr(points[:, 0], points[:, 1])
-    print(f"Correlation coefficient: {correlation[0]:.5f}, p-value: {correlation[1]:.5f}")
+    # print(f"Correlation coefficient: {correlation[0]:.5f}, p-value: {correlation[1]:.5f}")
     # if correlation[1] < 0.01:
     #     plt.scatter(points[:, 0], points[:, 1])
     #     plt.show()
@@ -75,50 +77,55 @@ def find_correlations(kg, classes: tuple = ("Business", "Health")):
     class_0_series = []
     class_1_series = []
     for s, p, o in kg.triples((None, RDF.hasSeriesClass, None)):
-        print(o)
         if classes[0] in o:
             class_0_series.append(s)
         elif classes[1] in o:
             class_1_series.append(s)
 
     permutations = [per for per in itertools.product(class_0_series, class_1_series)]
-
+    n_permutations = len(permutations)
     #first we will get an estimate of eachs permutations correlation
     r_scores = [0 for _ in permutations]
     countries = [s for s, p, o in kg.triples((None, None, RDF.country))]
+
     n_countries = len(countries)
+    st = time.time()
     for idx, permutation in enumerate(permutations):
-        print(permutation[0])
-        print(permutation[1])
+        print(f"\rEstimating correlations {idx}/{n_permutations} ETA:{((n_permutations-idx)*(time.time()-st)/(idx+1)):.2f}s", end = '')
         correlation = 0
         data_entries = 0
-        for i in range(5):
+        for _ in range(20):
             rand_country = countries[random.randrange(0, n_countries)]
+            # rand_country = countries[0]
             ct = get_correlation(kg, rand_country, permutation)
-            if not ct:
-                print(f"    {rand_country}")
-                get_correlation(kg, rand_country, permutation)
+            if not ct or np.isnan(ct[0]):
                 continue
-            correlation = ct[0]
+            correlation += ct[0]
             data_entries += 1
 
         try:
             r_scores[idx] = correlation/data_entries
         except ZeroDivisionError:
             r_scores[idx] = 0
+    print()
+    sorted_indices = np.argsort(r_scores)
+    to_save = np.zeros(shape = (len(sorted_indices), 3), dtype=object)
+    for i, sorted_idx in enumerate(sorted_indices):
+        if r_scores[idx] == 0:
+            continue
+        print(permutations[sorted_idx][0])
+        print(permutations[sorted_idx][1])
+        print(f"{r_scores[sorted_idx]:.4f}")
+        to_save[i] = [permutations[sorted_idx][0], permutations[sorted_idx][1], r_scores[sorted_idx]]
 
-    for idx, score in enumerate(r_scores):
-        print(permutations[idx][0])
-        print(permutations[idx][1])
-        print(r_scores[idx])
-
+    np.savetxt("data/correlations_20.csv", to_save, delimiter=",", fmt='%s')
 
     return
 
 
 
 def main():
-    graph_path = 'data/graphs/g_temp.ttl'
+    graph_path = 'data/graphs/g_30_03_20_55.ttl'
 
     kg = Graph()
     try:
@@ -137,4 +144,5 @@ def main():
 
 
 if __name__ == "__main__":
+    warnings.filterwarnings("ignore")
     main()

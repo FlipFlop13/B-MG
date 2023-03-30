@@ -147,7 +147,7 @@ def horb(kg):
 def main():
     st = time.time()
 
-    graph_path = f"data/graphs/g_30_03_15_07.ttl"
+    # graph_path = f"data/graphs/g_30_03_20_55.ttl"
     graph_path = "data/graphs/g_temp.ttl"
 
     kg = Graph()
@@ -168,8 +168,8 @@ def main():
             kg = df_to_kg_who(df, kg)
         elif 'WB' in file:
             kg = df_to_kg_wbd(df, kg)
-        if idx == 5:
-            break
+        # if idx == 5:
+        #     break
 
 
     kg = horb(kg)
