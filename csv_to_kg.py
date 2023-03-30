@@ -2,7 +2,7 @@ import os, sys
 import pandas as pd
 import numpy as np
 from rdflib import Graph, Literal, RDF, URIRef
-from rdflib.namespace import FOAF , XSD, Namespace
+from rdflib.namespace import FOAF, XSD, Namespace
 from rdflib.extras.external_graph_libs import rdflib_to_networkx_multidigraph
 from hashlib import sha1
 import re
@@ -10,6 +10,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import glob
 import pprint
+import time
 
 RDF = Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
 RDFS = Namespace('http://www.w3.org/2000/01/rdf-schema#')
@@ -39,8 +40,6 @@ def df_to_kg_wbd(df, kg):
     The input data must be of the form provided by the world bank i.e. country, country code, series, series code, year1-yearn
     """
     for index, row in df.iterrows():
-        if not "Brazil" in row['Country Name']:
-            continue
         country =re.sub(" ", "_", row['Country Name'])
         series = re.sub(" ", "_", row['Series Name'])
         series = re.sub('\(', "-", series)
@@ -48,9 +47,10 @@ def df_to_kg_wbd(df, kg):
 
         kg.add((COUNTRIES[country], RDF.type, RDF.country))
         country_series = f"{series}_{country}"
-        kg.add((COUNTRIES[country], RDF.hasseries, SERIES[country_series]))
+        kg.add((COUNTRIES[country], RDF.hasSeries, SERIES[country_series]))
         kg.add((SERIES[country_series], RDF.type, SERIES[series]))
         kg.add((SERIES[series], RDF.type, RDF.series))
+        kg.add((SERIES[series], RDF.hasSeriesClass, Literal("Placeholder", datatype=XSD.string)))
 
         for key, value in row.items():
             year = key.split()[0]#In the year columns there are two year values (int and code)
@@ -64,8 +64,9 @@ def df_to_kg_wbd(df, kg):
                 continue
 
             country_series_point = f"{series}_{country}_{year}"
-            kg.add((SERIES[country_series], RDF.haspoint, SERIES[country_series_point]))
-            kg.add((SERIES[country_series_point], RDF.hasvalue, Literal(value, datatype=XSD.float)))
+            kg.add((SERIES[country_series], RDF.hasPoint, SERIES[country_series_point]))
+            kg.add((SERIES[country_series_point], RDF.hasValue, Literal(value, datatype=XSD.float)))
+            kg.add((SERIES[country_series_point], RDF.year, Literal(year, datatype=XSD.integer)))
 
 
     return kg
@@ -97,50 +98,84 @@ def df_to_kg_who(df, kg):
         #topic which is a subclass of the typee series
         #e.g. Brazil Business Rating series -> Business Rating series -> series
         country_series = f"{series}_{country}"
-        kg.add((COUNTRIES[country], RDF.hasseries, SERIES[country_series]))
+        kg.add((COUNTRIES[country], RDF.hasSeries, SERIES[country_series]))
         kg.add((SERIES[country_series], RDF.type, SERIES[series]))
         kg.add((SERIES[series], RDF.type, RDF.series))
+        kg.add((SERIES[series], RDF.hasSeriesClass, Literal("Placeholder", datatype=XSD.string)))
 
 
         #Add a point to the series, using the year to distinguish the point
         country_series_point = f"{series}_{country}_{year}"
 
         value = float(row['FactValueNumeric'])
-        kg.add((SERIES[country_series], RDF.haspoint, SERIES[country_series_point]))
-        kg.add((SERIES[country_series_point], RDF.hasvalue, Literal(value, datatype=XSD.float)))
+        kg.add((SERIES[country_series], RDF.hasPoint, SERIES[country_series_point]))
+        kg.add((SERIES[country_series_point], RDF.hasValue, Literal(value, datatype=XSD.float)))
+        kg.add((SERIES[country_series_point], RDF.year, Literal(year, datatype=XSD.integer)))
 
     return kg
 
+def horb(kg):
+    """Every series for this project is either a business related series or a health related series.
+    The health related series are broader and include things such as education
+    """
+    with open('data/HorB.txt') as f:
+        lines = f.readlines()
+
+    type_dict = {}
+    for line in lines:
+        line = re.sub('\n', '', line)
+        if len(line) == 0:
+            continue
+        key, type = line.split()
+        if not key[-1] == '-':
+            print(key)
+        type_dict[str(key)] = type
+
+    i = 0
+    print(str(key))
+
+    for s, p, o in kg.triples((None, RDF.hasSeriesClass, None)):
+        sstring = str(s)
+        type = type_dict.get(sstring, "Placeholder")
+
+        kg.remove((s, RDF.hasSeriesClass, None)) #remove the placeholder and add the category
+        kg.add((s, RDF.hasSeriesClass, Literal(type, datatype=XSD.string)))
 
 
+    return kg
 
 def main():
+    st = time.time()
+
+    graph_path = f"data/graphs/g_30_03_15_07.ttl"
+    graph_path = "data/graphs/g_temp.ttl"
 
     kg = Graph()
     try:
-        kg.parse("data/graphs/g_0.ttl")
-        pass
-    except FileNotFoundError:
-        print("RDF not found, initiating a new graph!")
-    #     pass
-    # for stmt in kg:
-    #     pprint.pprint(stmt)
+        print("Loading graph!", end='')
+        kg.parse(graph_path)
+        print("\rGraph loaded!")
 
-    print(len(kg))
-    sys.exit()
+    except FileNotFoundError:
+        print("\rRDF not found, initiating a new graph!")
+
     files = glob.glob("data/csv/*.csv")
 
-    for file in files:
+    for idx, file in enumerate(files):
         print(f"Adding file {file} to the graph.")
         df = load_csv(file)
-
         if 'WHO' in file:
             kg = df_to_kg_who(df, kg)
         elif 'WB' in file:
             kg = df_to_kg_wbd(df, kg)
+        if idx == 5:
+            break
 
 
-    kg.serialize(destination='data/graphs/g_26_03_16_51.ttl')
+    kg = horb(kg)
+    print("Saving graph!")
+    kg.serialize(destination=graph_path)
+    print(f"Running time: {(time.time()-st):.4f}")
 
 
 if __name__ == "__main__":

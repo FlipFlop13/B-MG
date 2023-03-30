@@ -1,0 +1,298 @@
+
+https://example.org/series/Estimated_malaria_incidence_-per_1000_population_at_risk- Health
+
+https://example.org/series/New_HIV_infections_-per_1000_uninfected_population- Health
+
+https://example.org/series/Estimated_road_traffic_death_rate_-per_100_000_population- Health
+
+https://example.org/series/Estimates_of_rates_of_homicides_per_100_000_population- Health
+
+https://example.org/series/Hepatitis_B_surface_antigen_-HBsAg-_prevalence_among_children_under_5_years_-%- Health
+
+https://example.org/series/Reported_number_of_people_requiring_interventions_against_NTDs- Health
+
+https://example.org/series/Neonatal_mortality_rate_-per_1000_live_births- Health
+
+https://example.org/series/Ease_of_doing_business_score_-DB15_methodology- Business
+
+https://example.org/series/Getting_credit_-DB05-14_methodology-_-_Score- Business
+
+https://example.org/series/Getting_credit_-DB15-20_methodology-_-_Score- Business
+
+https://example.org/series/Getting_electricity:_Cost_to_get_electricity_-%_of_income_per_capita- Business
+
+https://example.org/series/Getting_electricity:_Price_of_electricity_-US_cents_per_kWh-_-DB16-20_methodology- Business
+
+https://example.org/series/Getting_electricity:_Total_duration_and_frequency_of_outages_per_customer_a_year_-0-3-_-DB16-20_methodology- Business
+
+https://example.org/series/Getting_electricity_-DB10-15_methodology-_-_Score- Business
+
+https://example.org/series/Getting_electricity_-DB16-20_methodology-_-_Score- Business
+
+https://example.org/series/Global:_Ease_of_doing_business_score_-DB10-14_methodology- Business
+
+https://example.org/series/Global:_Ease_of_doing_business_score_-DB15_methodology- Business
+
+https://example.org/series/Global:_Ease_of_doing_business_score_-DB17-20_methodology- Business
+
+https://example.org/series/Rank:_Ease_of_doing_business_index_-1=most_business-friendly_regulations- Business
+
+https://example.org/series/Rank:_Getting_credit_-1=most_business-friendly_regulations- Business
+
+https://example.org/series/Rank:_Starting_a_business_-1=most_business-friendly_regulations- Business
+
+https://example.org/series/Starting_a_business:_Cost_-_Men_-%_of_income_per_capita- Business
+
+https://example.org/series/Starting_a_business:_Cost_-_Women_-%_of_income_per_capita- Business
+
+https://example.org/series/Starting_a_business:_Procedures_required_-_Men_-number- Business 
+
+https://example.org/series/Starting_a_business:_Procedures_required_-_Women_-number- Business
+
+https://example.org/series/Starting_a_business_-_Score- Business
+
+https://example.org/series/Access_to_electricity_-%_of_population- Business
+
+https://example.org/series/Account_ownership_at_a_financial_institution_or_with_a_mobile-money-service_provider,_female_-%_of_population_ages_15+- Business
+
+https://example.org/series/Account_ownership_at_a_financial_institution_or_with_a_mobile-money-service_provider,_male_-%_of_population_ages_15+- Business
+
+https://example.org/series/Account_ownership_at_a_financial_institution_or_with_a_mobile-money-service_provider,_older_adults_-%_of_population_ages_25+- Business
+
+https://example.org/series/Account_ownership_at_a_financial_institution_or_with_a_mobile-money-service_provider,_poorest_40%_-%_of_population_ages_15+- Business
+
+https://example.org/series/Account_ownership_at_a_financial_institution_or_with_a_mobile-money-service_provider,_primary_education_or_less_-%_of_population_ages_15+- Business
+
+https://example.org/series/Account_ownership_at_a_financial_institution_or_with_a_mobile-money-service_provider,_richest_60%_-%_of_population_ages_15+- Business
+
+https://example.org/series/Account_ownership_at_a_financial_institution_or_with_a_mobile-money-service_provider,_secondary_education_or_more_-%_of_population_ages_15+- Business
+
+https://example.org/series/Account_ownership_at_a_financial_institution_or_with_a_mobile-money-service_provider,_young_adults_-%_of_population_ages_15-24- Business
+
+https://example.org/series/Account_ownership_at_a_financial_institution_or_with_a_mobile-money-service_provider_-%_of_population_ages_15+- Business
+
+https://example.org/series/Adjusted_net_national_income_-annual_%_growth- Business 
+
+https://example.org/series/Adjusted_net_national_income_-constant_2015_US$- Business 
+
+https://example.org/series/Adjusted_net_national_income_-current_US$- Business
+
+https://example.org/series/Adjusted_net_national_income_per_capita_-annual_%_growth- Business
+
+https://example.org/series/Adjusted_savings:_education_expenditure_-%_of_GNI- Health
+
+https://example.org/series/Adjusted_savings:_education_expenditure_-current_US$- Health
+
+https://example.org/series/Adjusted_savings:_gross_savings_-%_of_GNI- Business
+
+https://example.org/series/Adolescent_fertility_rate_-births_per_1,000_women_ages_15-19- Health
+
+https://example.org/series/Automated_teller_machines_-ATMs-_-per_100,000_adults- Business
+
+https://example.org/series/Average_time_to_clear_exports_through_customs_-days- Business
+
+https://example.org/series/Average_working_hours_of_children,_working_only,_ages_7-14_-hours_per_week- Health
+
+https://example.org/series/Bank_capital_to_assets_ratio_-%- Business
+
+https://example.org/series/Bank_liquid_reserves_to_bank_assets_ratio_-%- Business
+
+https://example.org/series/Birth_rate,_crude_-per_1,000_people- Health
+
+https://example.org/series/Births_attended_by_skilled_health_staff_-%_of_total- Health 
+
+https://example.org/series/Borrowers_from_commercial_banks_-per_1,000_adults- Business
+
+https://example.org/series/Bribery_incidence_-%_of_firms_experiencing_at_least_one_bribe_payment_request- Business
+
+https://example.org/series/CPIA_building_human_resources_rating_-1=low_to_6=high- Business
+
+https://example.org/series/CPIA_business_regulatory_environment_rating_-1=low_to_6=high- Business
+
+https://example.org/series/CPIA_debt_policy_rating_-1=low_to_6=high- Business
+
+https://example.org/series/CPIA_economic_management_cluster_average_-1=low_to_6=high- Business
+
+https://example.org/series/CPIA_efficiency_of_revenue_mobilization_rating_-1=low_to_6=high- Business
+
+https://example.org/series/CPIA_equity_of_public_resource_use_rating_-1=low_to_6=high- Business
+
+https://example.org/series/CPIA_financial_sector_rating_-1=low_to_6=high- Business
+
+https://example.org/series/CPIA_fiscal_policy_rating_-1=low_to_6=high- Business
+
+https://example.org/series/CPIA_gender_equality_rating_-1=low_to_6=high- Business 
+
+https://example.org/series/CPIA_macroeconomic_management_rating_-1=low_to_6=high- Business
+
+https://example.org/series/CPIA_policies_for_social_inclusion/equity_cluster_average_-1=low_to_6=high- Health
+
+https://example.org/series/CPIA_policy_and_institutions_for_environmental_sustainability_rating_-1=low_to_6=high- Business
+
+https://example.org/series/CPIA_property_rights_and_rule-based_governance_rating_-1=low_to_6=high- Business
+
+https://example.org/series/CPIA_quality_of_budgetary_and_financial_management_rating_-1=low_to_6=high- Business
+
+https://example.org/series/Cause_of_death,_by_communicable_diseases_and_maternal,_prenatal_and_nutrition_conditions_-%_of_total- Health
+
+https://example.org/series/Cause_of_death,_by_injury_-%_of_total- Health
+
+https://example.org/series/Cause_of_death,_by_non-communicable_diseases_-%_of_total- Health
+
+https://example.org/series/Children_-0-14-_living_with_HIV- Health
+
+https://example.org/series/Children_-ages_0-14-_newly_infected_with_HIV- Health
+
+https://example.org/series/Commercial_bank_branches_-per_100,000_adults- Business
+
+https://example.org/series/Commercial_banks_and_other_lending_-PPG_+_PNG-_-NFL,_current_US$- Business
+
+https://example.org/series/Current_education_expenditure,_total_-%_of_total_expenditure_in_public_institutions- Health
+
+https://example.org/series/Current_health_expenditure_-%_of_GDP- Health
+
+https://example.org/series/Current_health_expenditure_per_capita_-current_US$- Health
+
+https://example.org/series/Death_rate,_crude_-per_1,000_people- Health
+
+https://example.org/series/Deposit_interest_rate_-%- Business
+
+https://example.org/series/Depth_of_credit_information_index_-0=low_to_8=high- Business
+
+https://example.org/series/Diabetes_prevalence_-%_of_population_ages_20_to_79- Health 
+
+https://example.org/series/Disaster_risk_reduction_progress_score_-1-5_scale;_5=best- Health 
+
+https://example.org/series/Domestic_general_government_health_expenditure_-%_of_GDP- Health 
+
+https://example.org/series/Domestic_general_government_health_expenditure_-%_of_current_health_expenditure- Health
+
+https://example.org/series/Domestic_general_government_health_expenditure_-%_of_general_government_expenditure- Health
+
+https://example.org/series/Domestic_general_government_health_expenditure_per_capita,_PPP_-current_international_$- Health
+
+https://example.org/series/Domestic_general_government_health_expenditure_per_capita_-current_US$- Health 
+
+https://example.org/series/Ease_of_doing_business_rank_-1=most_business-friendly_regulations- Business 
+
+https://example.org/series/Ease_of_doing_business_score_-0_=_lowest_performance_to_100_=_best_performance- Business
+
+https://example.org/series/Educational_attainment,_at_least_Bachelor's_or_equivalent,_population_25+,_female_-%-_-cumulative- Health 
+
+https://example.org/series/Educational_attainment,_at_least_Bachelor's_or_equivalent,_population_25+,_male_-%-_-cumulative- Health
+
+https://example.org/series/Educational_attainment,_at_least_Bachelor's_or_equivalent,_population_25+,_total_-%-_-cumulative- Health 
+
+https://example.org/series/Educational_attainment,_at_least_completed_lower_secondary,_population_25+,_female_-%-_-cumulative- Health 
+
+https://example.org/series/Educational_attainment,_at_least_completed_lower_secondary,_population_25+,_male_-%-_-cumulative- Health 
+
+https://example.org/series/External_health_expenditure_-%_of_current_health_expenditure- Health
+
+https://example.org/series/External_health_expenditure_per_capita,_PPP_-current_international_$- Health
+
+https://example.org/series/External_health_expenditure_per_capita_-current_US$- Health
+
+https://example.org/series/Female_headed_households_-%_of_households_with_a_female_head- Health
+
+https://example.org/series/Firms_that_spend_on_R&D_-%_of_firms- Business
+
+https://example.org/series/Firms_using_banks_to_finance_investment_-%_of_firms- Business
+
+https://example.org/series/Firms_using_banks_to_finance_working_capital_-%_of_firms- Business
+
+https://example.org/series/GDP_per_capita_growth_-annual_%- Business
+
+https://example.org/series/Gini_index- Business
+
+https://example.org/series/Hospital_beds_-per_1,000_people- Health
+
+https://example.org/series/Human_capital_index_-HCI-,_female_-scale_0-1- Health 
+
+https://example.org/series/Human_capital_index_-HCI-,_male_-scale_0-1- Health 
+
+https://example.org/series/Human_capital_index_-HCI-_-scale_0-1- Health
+
+https://example.org/series/Incidence_of_HIV,_all_-per_1,000_uninfected_population- Health
+
+https://example.org/series/Incidence_of_malaria_-per_1,000_population_at_risk- Health
+
+https://example.org/series/Incidence_of_tuberculosis_-per_100,000_people- Health 
+
+https://example.org/series/Labor_force_participation_rate,_female_-%_of_female_population_ages_15+-_-national_estimate- Business 
+
+https://example.org/series/Labor_force_participation_rate,_total_-%_of_total_population_ages_15+-_-modeled_ILO_estimate- Business 
+
+https://example.org/series/Labor_force_participation_rate,_total_-%_of_total_population_ages_15+-_-national_estimate- Business 
+
+https://example.org/series/Lending_interest_rate_-%- Business
+
+https://example.org/series/Life_expectancy_at_birth,_female_-years- Health
+
+https://example.org/series/Life_expectancy_at_birth,_male_-years- Health 
+
+https://example.org/series/Life_expectancy_at_birth,_total_-years- Health 
+
+https://example.org/series/Listed_domestic_companies,_total- Business 
+
+https://example.org/series/Literacy_rate,_adult_total_-%_of_people_ages_15_and_above- Health
+
+https://example.org/series/Logistics_performance_index:_Competence_and_quality_of_logistics_services_-1=low_to_5=high- Business
+
+https://example.org/series/Logistics_performance_index:_Ease_of_arranging_competitively_priced_shipments_-1=low_to_5=high- Business
+
+https://example.org/series/Maternal_mortality_ratio_-modeled_estimate,_per_100,000_live_births- Health
+
+https://example.org/series/Maternal_mortality_ratio_-national_estimate,_per_100,000_live_births- Health 
+
+https://example.org/series/Merchandise_trade_-%_of_GDP- Business 
+
+https://example.org/series/Military_expenditure_-%_of_GDP- Health 
+
+https://example.org/series/Military_expenditure_-%_of_general_government_expenditure- Health 
+
+https://example.org/series/Mortality_rate_attributed_to_household_and_ambient_air_pollution,_age-standardized_-per_100,000_population- Health 
+
+https://example.org/series/New_businesses_registered_-number- Business 
+
+https://example.org/series/Newborns_protected_against_tetanus_-%- Health 
+
+https://example.org/series/Part_time_employment,_total_-%_of_total_employment- Business 
+
+https://example.org/series/Patent_applications,_nonresidents- Business
+
+https://example.org/series/Patent_applications,_residents- Business
+
+https://example.org/series/People_using_at_least_basic_drinking_water_services_-%_of_population- Health 
+
+https://example.org/series/People_using_at_least_basic_sanitation_services_-%_of_population- Health 
+
+https://example.org/series/Prevalence_of_severe_food_insecurity_in_the_population_-%- Health
+
+https://example.org/series/Prevalence_of_undernourishment_-%_of_population- Health 
+
+https://example.org/series/Public_and_publicly_guaranteed_debt_service_-%_of_GNI- Business
+
+https://example.org/series/Public_and_publicly_guaranteed_debt_service_-%_of_exports_of_goods,_services_and_primary_income- Business 
+
+https://example.org/series/Public_credit_registry_coverage_-%_of_adults- Business
+
+https://example.org/series/Rail_lines_-total_route-km- Business 
+
+https://example.org/series/Railways,_goods_transported_-million_ton-km- Business
+
+https://example.org/series/Railways,_passengers_carried_-million_passenger-km- Business
+
+https://example.org/series/Real_interest_rate_-%- Business
+
+https://example.org/series/Self-employed,_total_-%_of_total_employment-_-modeled_ILO_estimate- Business
+
+https://example.org/series/Sex_ratio_at_birth_-male_births_per_female_births- Health
+
+https://example.org/series/Stocks_traded,_total_value_-%_of_GDP- Business 
+
+https://example.org/series/Stocks_traded,_total_value_-current_US$- Business 
+
+https://example.org/series/Stocks_traded,_turnover_ratio_of_domestic_shares_-%- Business
+
+https://example.org/series/Suicide_mortality_rate_-per_100,000_population- Health
