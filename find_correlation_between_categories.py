@@ -8,7 +8,8 @@ from scipy.stats import pearsonr
 import matplotlib.pyplot as plt
 import time
 import warnings
-
+import math
+import multiprocessing as mp
 
 RDF = Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
 RDFS = Namespace('http://www.w3.org/2000/01/rdf-schema#')
@@ -63,7 +64,7 @@ def get_correlation(kg, country, permutation):
     #     plt.show()
     return correlation
 
-def find_correlations(kg, classes: tuple = ("Business", "Health")):
+def find_series_correlations(kg, classes: tuple = ("Business", "Health")):
     """
     This function will take as input two categories (e.g. Business and Health) and approximate the correlation
     for the combinations of time series in these categories. As running this for every data point and series combination
@@ -85,47 +86,359 @@ def find_correlations(kg, classes: tuple = ("Business", "Health")):
     permutations = [per for per in itertools.product(class_0_series, class_1_series)]
     n_permutations = len(permutations)
     #first we will get an estimate of eachs permutations correlation
-    r_scores = [0 for _ in permutations]
+    correlation_scores_sample = [0 for _ in permutations]
     countries = [s for s, p, o in kg.triples((None, None, RDF.country))]
 
     n_countries = len(countries)
     st = time.time()
+    print("Finding the correlation for interesting pairs, using all the countries' data!")
+    #We will first estimate the correlations with a sample of random coutries
+    #For each permutation of the series of interest
     for idx, permutation in enumerate(permutations):
         print(f"\rEstimating correlations {idx}/{n_permutations} ETA:{((n_permutations-idx)*(time.time()-st)/(idx+1)):.2f}s", end = '')
         correlation = 0
         data_entries = 0
-        for _ in range(20):
+        #Get a sample of the correlations
+        for _ in range(5):
             rand_country = countries[random.randrange(0, n_countries)]
-            # rand_country = countries[0]
             ct = get_correlation(kg, rand_country, permutation)
+            if not ct or np.isnan(ct[0]): #The ct function returns False when the country does not have one of the series
+                #and the function returns nan when one of the series has constant value
+                continue
+            correlation += ct[0]
+            data_entries += 1
+
+        try:
+            correlation_scores_sample[idx] = correlation/data_entries #Save the average correlation_scores
+        except ZeroDivisionError:
+            correlation_scores_sample[idx] = 0
+
+
+    #Repeat the process for all countries where there was evidence of strong correlation from the sample
+    correlation_scores_population = []
+    for idx, permutation in enumerate(permutations):
+        print(
+            f"\rEstimating correlations {idx}/{n_permutations} ETA:{((n_permutations - idx) * (time.time() - st) / (idx + 1)):.2f}s",
+            end='')
+        if abs(correlation_scores_sample[idx]) < 0.8:
+            continue
+        correlation = 0
+        data_entries = 0
+        for country in countries:
+            ct = get_correlation(kg, country, permutation)
             if not ct or np.isnan(ct[0]):
                 continue
             correlation += ct[0]
             data_entries += 1
 
         try:
-            r_scores[idx] = correlation/data_entries
+            correlation_scores_population.append(correlation / data_entries)
         except ZeroDivisionError:
-            r_scores[idx] = 0
-    print()
-    sorted_indices = np.argsort(r_scores)
+            correlation_scores_population.append(0)
+
+    print() #Print all the values in ascending correlation order
+    sorted_indices = np.argsort(correlation_scores_population)
     to_save = np.zeros(shape = (len(sorted_indices), 3), dtype=object)
     for i, sorted_idx in enumerate(sorted_indices):
-        if r_scores[idx] == 0:
+        if correlation_scores_sample[idx] == 0:
             continue
         print(permutations[sorted_idx][0])
         print(permutations[sorted_idx][1])
-        print(f"{r_scores[sorted_idx]:.4f}")
-        to_save[i] = [permutations[sorted_idx][0], permutations[sorted_idx][1], r_scores[sorted_idx]]
+        print(f"{correlation_scores_population[sorted_idx]:.4f}")
+        to_save[i] = [permutations[sorted_idx][0], permutations[sorted_idx][1], correlation_scores_population[sorted_idx]]
 
     np.savetxt("data/correlations_20.csv", to_save, delimiter=",", fmt='%s')
+
+    return correlation_scores_population
+
+def get_similarity(kg, permutation, n_series=5):
+    """
+    Get series for both countries and apply cosine similarity to them.
+    Perform this n_series times. Return the average values.
+    input: Graph, permutation of two countries, n_series.
+    output: similarity value.
+    """
+
+    #First get all the series that both countries have
+    q = f"""
+        SELECT ?series
+        WHERE {{
+            ?country0 rdf:hasSeries ?seriesC0.
+            ?seriesC0 rdf:type ?series.
+            ?country1 rdf:hasSeries ?seriesC1.
+            ?seriesC1 rdf:type ?series.
+        }}
+    """
+    series = [r['series'] for r in kg.query(q, initBindings={'country0': permutation[0], 'country1': permutation[1]})]
+    #get a random sample of those series
+    if not n_series == 0: #if n is 0 we will calculate for all series
+        try:
+            series = random.sample(series, n_series)
+        except ValueError:
+            n_series = len(series)
+            series = random.sample(series, n_series)
+
+
+    euclidean_similarity, euclidean_data_entries = 0, 0
+    for idx, serie in enumerate(series):
+        q = f"""
+            SELECT ?year ?value
+            WHERE {{
+                ?country rdf:hasSeries ?y.
+                ?y rdf:type ?series.
+                ?y rdf:hasPoint ?p.
+                ?p rdf:hasValue ?value.
+                ?p rdf:year ?year.
+            }}
+        """
+        # Apply the query to the graph and iterate through results
+        q_d = {}
+        for r in kg.query(q, initBindings={'series': serie, 'country': permutation[0]}):
+            q_d[r['year']] = r['value']
+
+        data_pairs = []
+        for r in kg.query(q, initBindings={'series': serie, 'country': permutation[1]}):
+            perm_0 = q_d.get(r['year'], False)  # we must have two points for the same year
+            if not perm_0:
+                continue
+            data_pairs.append([perm_0, r['value']])
+
+        euclidean_similarity += math.sqrt(sum(pow(float(a)-float(b),2) for a, b in data_pairs))
+        euclidean_data_entries += 1
+    if euclidean_data_entries == 0:
+        euclidean_similarity = 0
+    else:
+        euclidean_similarity = euclidean_similarity / euclidean_data_entries
+
+    return euclidean_similarity, n_series
+
+
+def find_country_similarity(kg):
+    """
+    This function will return a similarity value between every country pair.
+    input: Graph
+
+    """
+    countries = [s for s, p, o in kg.triples((None, None, RDF.country))]
+    n_countries = len(countries)
+    countries_string = np.array([country.split('/')[-1] for country in countries], ndmin=2)
+    similarities = np.zeros(shape=(len(countries),len(countries)))
+    not_enough_series_found = []
+    st = time.time()
+    for idx, country in enumerate(countries):
+        for i in range(idx+1, n_countries):
+            print(
+                f"\r{idx}/{n_countries} ETA:{((n_countries - idx) * (time.time() - st) / (idx + 1)):.2f}s; Finding similarity between: {countries_string[0][idx]}<->{countries_string[0][i]}",
+                end='')
+            n = 5
+            similarities[idx][i], n_series = get_similarity(kg, (countries[idx], countries[i]), n_series=n)
+            similarities[i][idx] = similarities[idx][i]
+            if not n == n_series:
+                not_enough_series_found.append([countries_string[0][idx], countries_string[0][i], n_series])
+
+    to_save = np.concatenate((countries_string,similarities))
+    np.savetxt("data/country_similarities_0.csv", to_save, delimiter=",", fmt='%s')
+
+    for not_enough in not_enough_series_found:
+        print(not_enough)
+
+
+def get_similarity_parallel(kg, countries, queue_in, queue_out):
+    """
+    Get series for both countries and apply cosine similarity to them.
+    Perform this n_series times. Return the average values.
+    input: Graph, permutation of two countries, n_series.
+    output: similarity value.
+    """
+
+    while True:
+        #First get all the series that both countries have
+        idx, i, n_series = queue_in.get()
+        country0 = countries[idx]
+        country1 = countries[i]
+        q = f"""
+            SELECT ?series
+            WHERE {{
+                ?country0 rdf:hasSeries ?seriesC0.
+                ?seriesC0 rdf:type ?series.
+                ?country1 rdf:hasSeries ?seriesC1.
+                ?seriesC1 rdf:type ?series.
+            }}
+        """
+        series = [r['series'] for r in kg.query(q, initBindings={'country0': country0, 'country1': country1})]
+        #get a random sample of those series
+        if not n_series == 0: #if n is 0 we will calculate for all series
+            try:
+                series = random.sample(series, n_series)
+            except ValueError:
+                n_series = len(series)
+                series = random.sample(series, n_series)
+
+
+        euclidean_similarity, euclidean_data_entries = 0, 0
+        for idx, serie in enumerate(series):
+            q = f"""
+                SELECT ?year ?value
+                WHERE {{
+                    ?country rdf:hasSeries ?y.
+                    ?y rdf:type ?series.
+                    ?y rdf:hasPoint ?p.
+                    ?p rdf:hasValue ?value.
+                    ?p rdf:year ?year.
+                }}
+            """
+            # Apply the query to the graph and iterate through results
+            q_d = {}
+            for r in kg.query(q, initBindings={'series': serie, 'country': country0}):
+                q_d[r['year']] = r['value']
+
+            data_pairs = []
+            for r in kg.query(q, initBindings={'series': serie, 'country': country1}):
+                perm_0 = q_d.get(r['year'], False)  # we must have two points for the same year
+                if not perm_0:
+                    continue
+                data_pairs.append([perm_0, r['value']])
+
+            euclidean_similarity += math.sqrt(sum(pow(float(a)-float(b),2) for a, b in data_pairs))
+            euclidean_data_entries += 1
+        if euclidean_data_entries == 0:
+            euclidean_similarity = 0
+        else:
+            euclidean_similarity = euclidean_similarity / euclidean_data_entries
+
+        queue_out.put([idx, i, euclidean_similarity, n_series])
+
+        if queue_in.empty():
+            queue_out.put(False)
+            return
+
+
+def find_country_similarity_parallel(kg):
+    """
+    This function will return a similarity value between every country pair.
+    input: Graph
+
+    """
+
+
+    countries = [s for s, p, o in kg.triples((None, None, RDF.country))]
+    n_countries = len(countries)
+    countries_string = np.array([country.split('/')[-1] for country in countries], ndmin=2)
+    similarities = np.zeros(shape=(len(countries),len(countries)))
+    n_series = np.zeros(shape=(len(countries),len(countries)))
+
+    cpu_n = 5
+    queues_in = [mp.Queue() for _ in range(cpu_n)]
+    queues_out = [mp.Queue() for _ in range(cpu_n)]
+    processess = [mp.Process(target=get_similarity_parallel, args=(kg, countries, queues_in[i], queues_out[i])) for i in
+                  range(cpu_n)]
+    n_runs = 0
+    for idx, country in enumerate(countries):
+        process_n = idx % cpu_n
+        for i in range(idx+1, n_countries):
+            n = 5
+            countries[idx]
+            countries[i]
+            queues_in[process_n].put((idx, i, n))
+            n_runs += 1
+
+    for process in processess:
+        print(f"Starting {process}")
+        process.start()
+
+    data_points = 0
+    last_entry_time = time.time()
+    st = time.time()
+    time.sleep(2)
+    while True:
+        if (data_points/n_runs) > 0.95 and (time.time() - last_entry_time) > 30 or data_points == n_runs:
+            break
+        for q in queues_out:
+            while not q.empty():
+                q_v = q.get()
+                if not q_v:
+                    break
+                x, y, euclidean_similarity, n = q_v
+                similarities[x][y] = euclidean_similarity
+                similarities[y][x] = euclidean_similarity
+                n_series[y][x] = n
+                n_series[x][y] = n
+                data_points += 1
+                last_entry_time = time.time()
+                print(f"\r {data_points}/{n_runs} ETA: {(n_runs-data_points)*((time.time()-st) / data_points):.2f}s",
+                      end='')
+
+    for process in processess:
+        process.kill()
+
+
+    to_save = np.concatenate((countries_string,similarities))
+    np.savetxt("data/country_similarities_0.csv", to_save, delimiter=",", fmt='%s', encoding='utf-8')
+
+    return
+
+def find_country_similarity_all_series(kg, similarities):
+    """
+    This function will get the similarity between the top 5 similar countries to A, and calculate the similarity between
+    them for all series.
+    """
+
+    countries = [s for s, p, o in kg.triples((None, None, RDF.country))]
+    cpu_n = 5
+    queues_in = [mp.Queue() for _ in range(cpu_n)]
+    queues_out = [mp.Queue() for _ in range(cpu_n)]
+    processess = [mp.Process(target=get_similarity_parallel, args=(kg, countries, queues_in[i], queues_out[i])) for i in
+                  range(cpu_n)]
+    top_n = 5
+    n_runs = 0
+    top_similar = np.zeros(shape=(len(countries), len(countries)))
+    for i, row in enumerate(similarities):
+        indices = np.argpartition(row, -top_n)[-top_n:]
+        process_n = idx % cpu_n
+        for idx in indices:
+            queues_in[process_n].put((idx, i, 0))
+            n_runs += 1
+
+    for process in processess:
+        print(f"Starting {process}")
+        process.start()
+
+    data_points = 0
+    last_entry_time = time.time()
+    st = time.time()
+    while True:
+        if (data_points/n_runs) > 0.95 and (time.time() - last_entry_time) > 30 or data_points == n_runs:
+            break
+        for q in queues_out:
+            while not q.empty():
+                q_v = q.get()
+                if not q_v:
+                    break
+                x, y, euclidean_similarity, n = q_v
+                top_similar[x][y] = euclidean_similarity
+                top_similar[y][x] = euclidean_similarity
+                n_series[y][x] = n
+                n_series[x][y] = n
+                data_points += 1
+                last_entry_time = time.time()
+                print(f"\r {data_points}/{n_runs} ETA: {(n_runs-data_points)*((time.time()-st) / data_points):.2f}s",
+                      end='')
+
+    for process in processess:
+        process.kill()
+
+    to_save = np.concatenate((np.array([country.split('/')[-1] for country in countries], ndmin=2),top_similar))
+    np.savetxt("data/country_similarities_0.csv", to_save, delimiter=",", fmt='%s', encoding='utf-8')
 
     return
 
 
 
+
+
+
 def main():
-    graph_path = 'data/graphs/g_30_03_20_55.ttl'
+    graph_path = 'data/graphs/g_temp.ttl'
 
     kg = Graph()
     try:
@@ -134,8 +447,9 @@ def main():
         print("\rGraph loaded!")
     except FileNotFoundError:
         sys.exit("\rRDF not found, terminating program!")
-
-    find_correlations(kg, ("Business", "Health"))
+    sim = np.genfromtxt('data/country_similarities_0.csv', delimiter=',')
+    # find_series_correlations(kg, ("Business", "Health"))
+    find_country_similarity_parallel(kg)
 
 
 

@@ -51,7 +51,7 @@ def df_to_kg_wbd(df, kg):
         kg.add((SERIES[country_series], RDF.type, SERIES[series]))
         kg.add((SERIES[series], RDF.type, RDF.series))
         kg.add((SERIES[series], RDF.hasSeriesClass, Literal("Placeholder", datatype=XSD.string)))
-
+        has_point = False
         for key, value in row.items():
             year = key.split()[0]#In the year columns there are two year values (int and code)
             try:
@@ -67,7 +67,9 @@ def df_to_kg_wbd(df, kg):
             kg.add((SERIES[country_series], RDF.hasPoint, SERIES[country_series_point]))
             kg.add((SERIES[country_series_point], RDF.hasValue, Literal(value, datatype=XSD.float)))
             kg.add((SERIES[country_series_point], RDF.year, Literal(year, datatype=XSD.integer)))
-
+            has_point = True
+        if not has_point:
+            kg.remove((COUNTRIES[country], RDF.hasSeries, SERIES[country_series]))
 
     return kg
 
@@ -111,6 +113,7 @@ def df_to_kg_who(df, kg):
         kg.add((SERIES[country_series], RDF.hasPoint, SERIES[country_series_point]))
         kg.add((SERIES[country_series_point], RDF.hasValue, Literal(value, datatype=XSD.float)))
         kg.add((SERIES[country_series_point], RDF.year, Literal(year, datatype=XSD.integer)))
+
 
     return kg
 
