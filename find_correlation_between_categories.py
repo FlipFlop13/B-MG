@@ -16,8 +16,9 @@ RDFS = Namespace('http://www.w3.org/2000/01/rdf-schema#')
 TOP_LEVEL_DOMAIN = Namespace('https://example.org/')
 COUNTRIES =  Namespace('https://example.org/countries/')
 SERIES =  Namespace('https://example.org/series/')
-
-
+CPU_N = 5
+# SIMILARITY_MEASURE = "euclidean"
+SIMILARITY_MEASURE = "cosine"
 
 def get_correlation(kg, country, permutation):
     """
@@ -95,7 +96,7 @@ def find_series_correlations(kg, classes: tuple = ("Business", "Health")):
     #We will first estimate the correlations with a sample of random coutries
     #For each permutation of the series of interest
     for idx, permutation in enumerate(permutations):
-        print(f"\rEstimating correlations {idx}/{n_permutations} ETA:{((n_permutations-idx)*(time.time()-st)/(idx+1)):.2f}s", end = '')
+        print(f"\rEstimating correlations {idx}/{n_permutations} ETA:{((n_permutations-idx)*(time.time()-st)/(idx+1)):.0f}s", end = '')
         correlation = 0
         data_entries = 0
         #Get a sample of the correlations
@@ -118,7 +119,7 @@ def find_series_correlations(kg, classes: tuple = ("Business", "Health")):
     correlation_scores_population = []
     for idx, permutation in enumerate(permutations):
         print(
-            f"\rEstimating correlations {idx}/{n_permutations} ETA:{((n_permutations - idx) * (time.time() - st) / (idx + 1)):.2f}s",
+            f"\rEstimating correlations {idx}/{n_permutations} ETA:{((n_permutations - idx) * (time.time() - st) / (idx + 1)):.0f}s",
             end='')
         if abs(correlation_scores_sample[idx]) < 0.8:
             continue
@@ -147,7 +148,7 @@ def find_series_correlations(kg, classes: tuple = ("Business", "Health")):
         print(f"{correlation_scores_population[sorted_idx]:.4f}")
         to_save[i] = [permutations[sorted_idx][0], permutations[sorted_idx][1], correlation_scores_population[sorted_idx]]
 
-    np.savetxt("data/correlations_20.csv", to_save, delimiter=",", fmt='%s')
+    np.savetxt("data/similarity_measurements/correlations_20.csv", to_save, delimiter=";", fmt='%s')
 
     return correlation_scores_population
 
@@ -179,7 +180,7 @@ def get_similarity(kg, permutation, n_series=5):
             series = random.sample(series, n_series)
 
 
-    euclidean_similarity, euclidean_data_entries = 0, 0
+    similarity, data_entries = 0, 0
     for idx, serie in enumerate(series):
         q = f"""
             SELECT ?year ?value
@@ -203,14 +204,22 @@ def get_similarity(kg, permutation, n_series=5):
                 continue
             data_pairs.append([perm_0, r['value']])
 
-        euclidean_similarity += math.sqrt(sum(pow(float(a)-float(b),2) for a, b in data_pairs))
-        euclidean_data_entries += 1
-    if euclidean_data_entries == 0:
-        euclidean_similarity = 0
-    else:
-        euclidean_similarity = euclidean_similarity / euclidean_data_entries
+        if SIMILARITY_MEASURE == "euclidean":
+            similarity += math.sqrt(sum(pow(float(a) - float(b), 2) for a, b in data_pairs))
+        elif SIMILARITY_MEASURE == "cosine":
+            if len(data_pairs) < 2:
+                continue
+            data_a = np.array([data[0] for data in data_pairs], dtype='float')
+            data_b = np.array([data[1] for data in data_pairs], dtype='float')
+            similarity += np.dot(data_a, data_b) / (np.linalg.norm(data_a) * np.linalg.norm(data_b))
+        data_entries += 1
 
-    return euclidean_similarity, n_series
+    if data_entries == 0:
+        similarity = 0
+    else:
+        similarity = similarity / data_entries
+
+    return similarity, n_series
 
 
 def find_country_similarity(kg):
@@ -228,7 +237,7 @@ def find_country_similarity(kg):
     for idx, country in enumerate(countries):
         for i in range(idx+1, n_countries):
             print(
-                f"\r{idx}/{n_countries} ETA:{((n_countries - idx) * (time.time() - st) / (idx + 1)):.2f}s; Finding similarity between: {countries_string[0][idx]}<->{countries_string[0][i]}",
+                f"\r{idx}/{n_countries} ETA:{((n_countries - idx) * (time.time() - st) / (idx + 1)):.0f}s; Finding similarity between: {countries_string[0][idx]}<->{countries_string[0][i]}",
                 end='')
             n = 5
             similarities[idx][i], n_series = get_similarity(kg, (countries[idx], countries[i]), n_series=n)
@@ -237,10 +246,11 @@ def find_country_similarity(kg):
                 not_enough_series_found.append([countries_string[0][idx], countries_string[0][i], n_series])
 
     to_save = np.concatenate((countries_string,similarities))
-    np.savetxt("data/country_similarities_0.csv", to_save, delimiter=",", fmt='%s')
+    np.savetxt("data/similarity_measurements/country_similarities_1_1.csv", to_save, delimiter=";", fmt='%s')
 
     for not_enough in not_enough_series_found:
         print(not_enough)
+    return to_save
 
 
 def get_similarity_parallel(kg, countries, queue_in, queue_out):
@@ -253,9 +263,9 @@ def get_similarity_parallel(kg, countries, queue_in, queue_out):
 
     while True:
         #First get all the series that both countries have
-        idx, i, n_series = queue_in.get()
-        country0 = countries[idx]
-        country1 = countries[i]
+        x, y, n_series = queue_in.get()
+        country0 = countries[x]
+        country1 = countries[y]
         q = f"""
             SELECT ?series
             WHERE {{
@@ -275,7 +285,7 @@ def get_similarity_parallel(kg, countries, queue_in, queue_out):
                 series = random.sample(series, n_series)
 
 
-        euclidean_similarity, euclidean_data_entries = 0, 0
+        similarity, data_entries = 0, 0
         for idx, serie in enumerate(series):
             q = f"""
                 SELECT ?year ?value
@@ -298,15 +308,24 @@ def get_similarity_parallel(kg, countries, queue_in, queue_out):
                 if not perm_0:
                     continue
                 data_pairs.append([perm_0, r['value']])
+            if SIMILARITY_MEASURE == "euclidean":
+                similarity += math.sqrt(sum(pow(float(a)-float(b),2) for a, b in data_pairs))
+            elif SIMILARITY_MEASURE == "cosine":
+                if len(data_pairs) < 2:
+                    continue
+                data_a = np.array([data[0] for data in data_pairs], dtype='float')
+                data_b = np.array([data[1] for data in data_pairs], dtype='float')
+                if np.linalg.norm(data_a) == 0 or np.linalg.norm(data_b) == 0:
+                    continue
+                similarity += np.dot(data_a,data_b)/(np.linalg.norm(data_a)*np.linalg.norm(data_b))
 
-            euclidean_similarity += math.sqrt(sum(pow(float(a)-float(b),2) for a, b in data_pairs))
-            euclidean_data_entries += 1
-        if euclidean_data_entries == 0:
-            euclidean_similarity = 0
+            data_entries += 1
+        if data_entries == 0:
+            similarity = -1
         else:
-            euclidean_similarity = euclidean_similarity / euclidean_data_entries
+            similarity = similarity / data_entries
 
-        queue_out.put([idx, i, euclidean_similarity, n_series])
+        queue_out.put([x, y, similarity, n_series])
 
         if queue_in.empty():
             queue_out.put(False)
@@ -327,14 +346,13 @@ def find_country_similarity_parallel(kg):
     similarities = np.zeros(shape=(len(countries),len(countries)))
     n_series = np.zeros(shape=(len(countries),len(countries)))
 
-    cpu_n = 5
-    queues_in = [mp.Queue() for _ in range(cpu_n)]
-    queues_out = [mp.Queue() for _ in range(cpu_n)]
+    queues_in = [mp.Queue() for _ in range(CPU_N)]
+    queues_out = [mp.Queue() for _ in range(CPU_N)]
     processess = [mp.Process(target=get_similarity_parallel, args=(kg, countries, queues_in[i], queues_out[i])) for i in
-                  range(cpu_n)]
+                  range(CPU_N)]
     n_runs = 0
     for idx, country in enumerate(countries):
-        process_n = idx % cpu_n
+        process_n = idx % CPU_N
         for i in range(idx+1, n_countries):
             n = 5
             countries[idx]
@@ -343,7 +361,6 @@ def find_country_similarity_parallel(kg):
             n_runs += 1
 
     for process in processess:
-        print(f"Starting {process}")
         process.start()
 
     data_points = 0
@@ -358,14 +375,14 @@ def find_country_similarity_parallel(kg):
                 q_v = q.get()
                 if not q_v:
                     break
-                x, y, euclidean_similarity, n = q_v
-                similarities[x][y] = euclidean_similarity
-                similarities[y][x] = euclidean_similarity
+                x, y, similarity, n = q_v
+                similarities[x][y] = similarity
+                similarities[y][x] = similarity
                 n_series[y][x] = n
                 n_series[x][y] = n
                 data_points += 1
                 last_entry_time = time.time()
-                print(f"\r {data_points}/{n_runs} ETA: {(n_runs-data_points)*((time.time()-st) / data_points):.2f}s",
+                print(f"\r {data_points}/{n_runs} ETA: {(n_runs-data_points)*((time.time()-st) / data_points):.0f}s",
                       end='')
 
     for process in processess:
@@ -373,9 +390,9 @@ def find_country_similarity_parallel(kg):
 
 
     to_save = np.concatenate((countries_string,similarities))
-    np.savetxt("data/country_similarities_0.csv", to_save, delimiter=",", fmt='%s', encoding='utf-8')
+    np.savetxt("data/similarity_measurements/country_similarities_1_1.csv", to_save, delimiter=";", fmt='%s', encoding='utf-8')
 
-    return
+    return to_save
 
 def find_country_similarity_all_series(kg, similarities):
     """
@@ -384,29 +401,28 @@ def find_country_similarity_all_series(kg, similarities):
     """
 
     countries = [s for s, p, o in kg.triples((None, None, RDF.country))]
-    cpu_n = 5
-    queues_in = [mp.Queue() for _ in range(cpu_n)]
-    queues_out = [mp.Queue() for _ in range(cpu_n)]
+    queues_in = [mp.Queue() for _ in range(CPU_N)]
+    queues_out = [mp.Queue() for _ in range(CPU_N)]
     processess = [mp.Process(target=get_similarity_parallel, args=(kg, countries, queues_in[i], queues_out[i])) for i in
-                  range(cpu_n)]
+                  range(CPU_N)]
     top_n = 5
     n_runs = 0
-    top_similar = np.zeros(shape=(len(countries), len(countries)))
-    for i, row in enumerate(similarities):
+    top_similar = np.zeros(shape=(len(countries), len(countries)), dtype=float)
+    for x, row in enumerate(similarities[1:,:]):
         indices = np.argpartition(row, -top_n)[-top_n:]
-        process_n = idx % cpu_n
-        for idx in indices:
-            queues_in[process_n].put((idx, i, 0))
+        process_n = x % CPU_N
+        for y in indices:
+            queues_in[process_n].put((x, y, 0))
             n_runs += 1
 
     for process in processess:
-        print(f"Starting {process}")
         process.start()
 
     data_points = 0
     last_entry_time = time.time()
     st = time.time()
     while True:
+        #Allow time out when at least 95% of the data has been acquired or if alls has been acquired
         if (data_points/n_runs) > 0.95 and (time.time() - last_entry_time) > 30 or data_points == n_runs:
             break
         for q in queues_out:
@@ -414,23 +430,22 @@ def find_country_similarity_all_series(kg, similarities):
                 q_v = q.get()
                 if not q_v:
                     break
-                x, y, euclidean_similarity, n = q_v
-                top_similar[x][y] = euclidean_similarity
-                top_similar[y][x] = euclidean_similarity
-                n_series[y][x] = n
-                n_series[x][y] = n
+                x, y, similarity, n = q_v
+                top_similar[x][y] = similarity
+                top_similar[y][x] = similarity
+
                 data_points += 1
                 last_entry_time = time.time()
-                print(f"\r {data_points}/{n_runs} ETA: {(n_runs-data_points)*((time.time()-st) / data_points):.2f}s",
+                print(f"\r {data_points}/{n_runs} ETA: {(n_runs-data_points)*((time.time()-st) / data_points):.0f}s",
                       end='')
 
     for process in processess:
         process.kill()
 
     to_save = np.concatenate((np.array([country.split('/')[-1] for country in countries], ndmin=2),top_similar))
-    np.savetxt("data/country_similarities_0.csv", to_save, delimiter=",", fmt='%s', encoding='utf-8')
+    np.savetxt("data/similarity_measurements/country_similarities_top_1_1.csv", to_save, delimiter=";", fmt='%s', encoding='utf-8')
 
-    return
+    return to_save
 
 
 
@@ -438,7 +453,7 @@ def find_country_similarity_all_series(kg, similarities):
 
 
 def main():
-    graph_path = 'data/graphs/g_temp.ttl'
+    graph_path = 'data/graphs/kg.ttl'
 
     kg = Graph()
     try:
@@ -447,14 +462,12 @@ def main():
         print("\rGraph loaded!")
     except FileNotFoundError:
         sys.exit("\rRDF not found, terminating program!")
-    sim = np.genfromtxt('data/country_similarities_0.csv', delimiter=',')
-    # find_series_correlations(kg, ("Business", "Health"))
-    find_country_similarity_parallel(kg)
 
 
-
-
-
+    find_series_correlations(kg, ("Business", "Health"))
+    sim = find_country_similarity_parallel(kg)
+    find_country_similarity_all_series(kg, similarities=sim)
+    pass
 
 
 if __name__ == "__main__":

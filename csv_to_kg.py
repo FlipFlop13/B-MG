@@ -150,8 +150,7 @@ def horb(kg):
 def main():
     st = time.time()
 
-    # graph_path = f"data/graphs/g_30_03_20_55.ttl"
-    graph_path = "data/graphs/g_temp.ttl"
+    graph_path = "data/graphs/kg.ttl"
 
     kg = Graph()
     try:
